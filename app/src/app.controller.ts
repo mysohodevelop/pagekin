@@ -6,7 +6,12 @@ export class AppController {
     @Render('index')
     root() {
         let a = { message: 'Hello world11!' }
-
+        return a;
+    }
+    @Get('guide')
+    @Render('guide')
+    test() {
+        let a = { message: 'Hello world11!' }
         return a;
     }
 }

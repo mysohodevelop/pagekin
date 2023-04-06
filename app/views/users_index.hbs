@@ -47,10 +47,14 @@
     <div class="container" style="margin-top:30px">
         <div class="row">
             <div class="col-sm-4">
-                <p>{{ message }}</p>
+                <p>왼쪽 메뉴</p>
             </div>
             <div class="col-sm-8">
-                <p>{{ message }}</p>
+                {{#each users}}
+                <p>
+                    <span> {{ firstName }} </span> - <span>{{ lastName }} Shekels </span>
+                </p>
+                {{/each}}
             </div>
         </div>
     </div>
