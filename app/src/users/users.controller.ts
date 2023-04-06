@@ -1,24 +1,26 @@
-import { Get, Controller, Render } from '@nestjs/common';
+import { Get, Controller, Render, Post, Body } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 
-@Controller('users')
+@Controller('/')
 export class UsersController {
     constructor(private readonly userService: UsersService) { }
 
-    @Get()
-    async findAll(): Promise<User[]> {
-        return this.userService.findAll();
+    @Get('/')
+    @Render('users_index')
+    async index() {
+        let users = await this.userService.findAll();
+        return { users: users }
     }
 
-    @Get('index')
-    @Render('users_index')
-    async test() {
-        let b = await this.userService.findAll();
-
-        console.log(b)
-        let a = { users: b }
-
-        return a;
+    // RESTFul API
+    @Get('users')
+    async findAll(): Promise<User[]> {
+      return (await this.userService.findAll()).reverse()
+    }
+    @Post('users')
+    async create(@Body() user: User): Promise<User> {
+        console.log(user)
+        return this.userService.create(user);
     }
 }
