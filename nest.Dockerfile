@@ -13,8 +13,8 @@ RUN apt update && \
     apt install -y nodejs
 RUN npm i -g @nestjs/cli@9.3.0
 
-COPY node_modules_202304061628.tar.gz /app/node_modules_202304061628.tar.gz
-RUN tar -xvzpf node_modules_202304061628.tar.gz
-RUN rm -rf /app/node_modules_202304061628.tar.gz
+COPY node_modules_202304060804.tar.gz /app/node_modules_202304060804.tar.gz
+RUN tar -xvzpf node_modules_202304060804.tar.gz
+RUN rm -rf /app/node_modules_202304060804.tar.gz
 
 ENTRYPOINT bash
