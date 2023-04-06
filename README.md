@@ -1,12 +1,14 @@
 
-# docker compose를 이용해서 container 생성
-docker-compose up -d --build
+### [1] docker 빌드 및 실행
+cd ~
+git clone https://github.com/WebJun/nest2
+cd nest2
 
-# 끄기
-docker-compose down
+### [2] docker 빌드 및 실행(3분 소요)
+docker compose up -d --build
 
-# docker images, container 모두 삭제
-docker system prune -a
+### [3] npm install 및 실행
+docker exec -it nest2-nest-1 npm install  
+docker exec -it nest2-nest-1 npm run start:dev
 
-# 리눅스 종류 확인
-grep . /etc/*-release
+### [4] 브라우저 http://localhost:13000/ 에 접속한다
