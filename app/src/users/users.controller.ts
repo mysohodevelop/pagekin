@@ -1,26 +1,39 @@
-import { Get, Controller, Render, Post, Body } from '@nestjs/common';
+import {
+  Get,
+  Controller,
+  Post,
+  Body,
+  Put,
+  Delete,
+  Param,
+  HttpCode,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 
-@Controller('/')
+@Controller('users')
 export class UsersController {
-    constructor(private readonly userService: UsersService) { }
+  constructor(private readonly userService: UsersService) {}
 
-    @Get('/')
-    @Render('users_index')
-    async index() {
-        let users = await this.userService.findAll();
-        return { users: users }
-    }
-
-    // RESTFul API
-    @Get('users')
-    async findAll(): Promise<User[]> {
-      return (await this.userService.findAll()).reverse()
-    }
-    @Post('users')
-    async create(@Body() user: User): Promise<User> {
-        console.log(user)
-        return this.userService.create(user);
-    }
+  @Get()
+  async index(): Promise<User[]> {
+    return await this.userService.findAll();
+  }
+  @Get(':id')
+  async show(@Param('id') id: number): Promise<User> {
+    return await this.userService.findOne(id);
+  }
+  @Post()
+  async store(@Body() user: User): Promise<User> {
+    return await this.userService.create(user);
+  }
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() user: User): Promise<User> {
+    return await this.userService.update(id, user);
+  }
+  @Delete(':id')
+  @HttpCode(204)
+  async destroy(@Param('id') id: number) {
+    return await this.userService.destroy(id);
+  }
 }

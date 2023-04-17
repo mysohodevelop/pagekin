@@ -12,3 +12,6 @@ docker exec -it nest2-nest-1 npm install
 docker exec -it nest2-nest-1 npm run start:dev
 
 ### [4] 브라우저 http://localhost:13000/ 에 접속한다
+
+### 참고사항
+https://oysu.tistory.com/52  
