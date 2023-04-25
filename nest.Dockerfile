@@ -11,6 +11,7 @@ WORKDIR /app
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 RUN apt update && \
     apt install -y nodejs
-RUN npm i -g @nestjs/cli@9.3.0
+RUN npm i -g yarn
+RUN yarn global add @nestjs/cli@9.3.0
 
 ENTRYPOINT bash
