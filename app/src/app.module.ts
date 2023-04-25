@@ -1,20 +1,23 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DataSource } from 'typeorm';
-import { User } from './users/user.entity';
+import { getConfig, getDataSourceConfig } from './common/database/configuration';
 import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'db',
-      port: 3306,
-      username: 'root',
-      password: 'docker123',
-      database: 'nest',
-      entities: [User],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env`,
+      ignoreEnvFile: false,
+    }),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => getConfig(),
+      dataSourceFactory: async function () {
+        return addTransactionalDataSource(new DataSource(getDataSourceConfig()));
+      },
     }),
     UsersModule,
   ],
