@@ -19,8 +19,7 @@
         }
     </style>
     <style>
-
-        .table tbody tr {cursor:pointer;}
+        .table tbody tr td {cursor:pointer;}
     </style>
 </head>
 
@@ -64,13 +63,12 @@
                         <label for="lastName">lastName</label>
                         <input type="text" class="form-control" name="lastName" placeholder="lastName">
                     </div>
-                    <button type="button" id="cancel_btn" class="btn btn-success" style="display:none;">Cancel</button>
+                    <button type="button" id="reset_btn" class="btn btn-success" style="display:none;">Cancel</button>
                     <button type="button" id="save_btn" class="btn btn-primary">Save</button>
                     <button type="button" id="delete_btn" class="btn btn-danger" style="display:none;">Delete</button>
                 </form>
             </div>
-            <div class="col-sm-8" id="users_list">
-            </div>
+            <div class="col-sm-8" id="user_list"></div>
         </div>
     </div>
 
@@ -78,107 +76,132 @@
         <p>Footer</p>
     </div>
 
-    <script>
-        class UserList {
-            draw(data) {
-                data.reverse();
-                let text = '<table class="table">';
-                text += `<thead>`;
-                text += `<tr>`;
-                text += `<td>id</td>`;
-                text += `<td>firstName</td>`;
-                text += `<td>lastName</td>`;
-                text += `</tr>`;
-                text += `</thead>`;
-                text += `<tbody>`;
-                for (let i = 0; i < data.length; i++) {
-                    text += `<tr data-user-id="${data[i].id}">`;
-                    text += `<td class="ids">${data[i].id}</td>`;
-                    text += `<td class="firstName">${data[i].firstName}</td>`;
-                    text += `<td class="lastName">${data[i].lastName}</td>`;
-                    text += `</tr>`;
-                }
-                text += `</tbody>`;
-                text += `</table>`;
-                $('#users_list').empty().append(text);
-            }
-            async get() {
-                const res = await axios.get(`/users`);
-                return res.data;
-            }
-            async getAndDraw() {
-                const res = await this.get(`/users`);
-                this.draw(res);
-            }
-            async save() {
-                const ids = $("[name='ids']").val();
-                if (ids !== '') {
-                    await this.edit();
-                    return;
-                }
-                await this.add();
-            }
-            async add() {
-                const postData = $("#users_form").serialize();
-                await axios.post('/users', postData);
-                await this.getAndDraw();
-                $("#users_form").find('input').val('');
-            }
-            async edit() {
-                const ids = $("[name='ids']").val();
-                const postData = $("#users_form").serialize();
-                await axios.put(`/users/${ids}`, postData);
-                await this.getAndDraw();
-                $("#users_form").find('input').val('');
-                $("#cancel_btn").hide();
-                $("#delete_btn").hide();
-            }
-            async delete() {
-                const ids = $("[name='ids']").val();
-                await axios.delete(`/users/${ids}`);
-                await this.getAndDraw();
-                $("#users_form").find('input').val('');
-                $("#cancel_btn").hide();
-                $("#delete_btn").hide();
-            }
+    <template id="user_template">
+        <table id="user_table" class="table" >
+            <thead>
+                <tr>
+                    <td>id</td>
+                    <td>firstName</td>
+                    <td>lastName</td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="ids"></td>
+                    <td class="firstName"></td>
+                    <td class="lastName"></td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
+
+
+<script>
+
+class UserModel {
+    async get() {
+        const res = await axios.get(`/users`);
+        return res.data.reverse();
+    }
+    async add(postData) {
+        await axios.post('/users', postData);
+    }
+    async edit(ids, postData) {
+        await axios.put(`/users/${ids}`, postData);
+    }
+    async delete(ids) {
+        await axios.delete(`/users/${ids}`);
+    }
+}
+
+class UserView {
+    draw(users) {
+        const tempHtml = $('#user_template').html();
+        const $table = $(tempHtml);
+        const $tr = $table.find('tbody tr').eq(0);
+        const trHtml = users.map((user) => {
+            $tr.find('.ids').text(user.id);
+            $tr.find('.firstName').text(user.firstName);
+            $tr.find('.lastName').text(user.lastName);
+            return $tr[0].outerHTML;
+        }).join('');
+        $table.find('tbody').html(trHtml);
+        $('#user_list').html($table);
+    }
+    reset() {
+        $("#users_form").find('input').val('');
+        $("#reset_btn").hide();
+        $("#delete_btn").hide();
+    }
+    editFormDraw(e) {
+        let $tr = $(e.target).parent('tr');
+        let ids = $tr.find('.ids').text();
+        let firstName = $tr.find('.firstName').text();
+        let lastName = $tr.find('.lastName').text();
+
+        $("[name='ids']").val(ids);
+        $("[name='firstName']").val(firstName);
+        $("[name='lastName']").val(lastName);
+        $("#reset_btn").show();
+        $("#delete_btn").show();
+    }
+}
+
+class UserController {
+    constructor() {
+        this.userModel = new UserModel();
+        this.userView = new UserView();
+    }
+    async draw() {
+        const users = await this.userModel.get();
+        this.userView.draw(users);
+    }
+    async save() {
+        const ids = $("[name='ids']").val();
+        const postData = $("#users_form").serialize();
+        if (this.getMode() === 'edit') {
+            await this.userModel.edit(ids, postData);
+            return;
         }
+        await this.userModel.add(postData);
+    }
+    async saveAndDraw() {
+        await this.save();
+        await this.draw();
+        this.userView.reset();
+    }
+    async delete() {
+        const ids = $("[name='ids']").val();
+        await this.userModel.delete(ids);
+    }
+    async deleteAndDraw() {
+        await this.delete();
+        await this.draw();
+        this.userView.reset();
+    }
+    getMode() {
+        const ids = $("[name='ids']").val();
+        return ids ? 'edit' : 'add';
+    }
+    editFormDraw(e) {
+        this.userView.editFormDraw(e);
+    }
+    reset() {
+        this.userView.reset();
+    }
+}
 
-        (async () => {
-            const userList = new UserList();
-            await userList.getAndDraw();
+(async () => {
+    const userController = new UserController();
+    await userController.draw();
 
-            $(document).on('click', '#save_btn', () => {
-                userList.save();
-            });
+    $(document).on('click', '#save_btn',      userController.saveAndDraw.bind(userController));
+    $(document).on('click', '#user_table td', userController.editFormDraw.bind(userController));
+    $(document).on('click', '#reset_btn',     userController.reset.bind(userController));
+    $(document).on('click', '#delete_btn',    userController.deleteAndDraw.bind(userController));
 
-            $(document).on('click', '.table tbody tr td', (e) => {
-                $tr = $(e.target).parent('tr');
-                let ids = $tr.find('.ids').text();
-                let firstName = $tr.find('.firstName').text();
-                let lastName = $tr.find('.lastName').text();
-
-                $("[name='ids']").val(ids);
-                $("[name='firstName']").val(firstName);
-                $("[name='lastName']").val(lastName);
-                $("#cancel_btn").show();
-                $("#delete_btn").show();
-            });
-
-            $(document).on('click', '#cancel_btn', (e) => {
-                $("#users_form").find('input').val('');
-                $("#cancel_btn").hide();
-                $("#delete_btn").hide();
-            });
-
-            $(document).on('click', '#delete_btn', (e) => {
-                userList.delete();
-            });
-
-
-            // TODO cancel_btn
-            // TODO delete
-        })()
-    </script>
+})();
+</script>
 </body>
 
 </html>
