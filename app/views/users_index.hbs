@@ -18,6 +18,10 @@
             background: #aaa;
         }
     </style>
+    <style>
+
+        .table tbody tr {cursor:pointer;}
+    </style>
 </head>
 
 <body>
@@ -51,6 +55,7 @@
         <div class="row">
             <div class="col-sm-4">
                 <form id="users_form" method="POST" action="javascript:;">
+                    <input type="hidden" name="ids">
                     <div class="form-group">
                         <label for="firstName">firstName</label>
                         <input type="text" class="form-control" name="firstName" placeholder="firstName">
@@ -59,7 +64,9 @@
                         <label for="lastName">lastName</label>
                         <input type="text" class="form-control" name="lastName" placeholder="lastName">
                     </div>
-                    <button type="submit" id="submit_btn" class="btn btn-primary">Submit</button>
+                    <button type="button" id="cancel_btn" class="btn btn-success" style="display:none;">Cancel</button>
+                    <button type="button" id="save_btn" class="btn btn-primary">Save</button>
+                    <button type="button" id="delete_btn" class="btn btn-danger" style="display:none;">Delete</button>
                 </form>
             </div>
             <div class="col-sm-8" id="users_list">
@@ -75,24 +82,28 @@
         class UserList {
             draw(data) {
                 data.reverse();
-                var text = '<table class="table">';
+                let text = '<table class="table">';
+                text += `<thead>`;
                 text += `<tr>`;
                 text += `<td>id</td>`;
                 text += `<td>firstName</td>`;
                 text += `<td>lastName</td>`;
                 text += `</tr>`;
-                for (var i = 0; i < data.length; i++) {
-                    text += `<tr>`;
-                    text += `<td>${data[i].id}</td>`;
-                    text += `<td>${data[i].firstName}</td>`;
-                    text += `<td>${data[i].lastName}</td>`;
+                text += `</thead>`;
+                text += `<tbody>`;
+                for (let i = 0; i < data.length; i++) {
+                    text += `<tr data-user-id="${data[i].id}">`;
+                    text += `<td class="ids">${data[i].id}</td>`;
+                    text += `<td class="firstName">${data[i].firstName}</td>`;
+                    text += `<td class="lastName">${data[i].lastName}</td>`;
                     text += `</tr>`;
                 }
+                text += `</tbody>`;
                 text += `</table>`;
                 $('#users_list').empty().append(text);
             }
             async get() {
-                let res = await axios.get(`/users`);
+                const res = await axios.get(`/users`);
                 return res.data;
             }
             async getAndDraw() {
@@ -100,10 +111,35 @@
                 this.draw(res);
             }
             async save() {
+                const ids = $("[name='ids']").val();
+                if (ids !== '') {
+                    await this.edit();
+                    return;
+                }
+                await this.add();
+            }
+            async add() {
                 const postData = $("#users_form").serialize();
                 await axios.post('/users', postData);
                 await this.getAndDraw();
-                $("#users_form").find('[type="text"]').val('');
+                $("#users_form").find('input').val('');
+            }
+            async edit() {
+                const ids = $("[name='ids']").val();
+                const postData = $("#users_form").serialize();
+                await axios.put(`/users/${ids}`, postData);
+                await this.getAndDraw();
+                $("#users_form").find('input').val('');
+                $("#cancel_btn").hide();
+                $("#delete_btn").hide();
+            }
+            async delete() {
+                const ids = $("[name='ids']").val();
+                await axios.delete(`/users/${ids}`);
+                await this.getAndDraw();
+                $("#users_form").find('input').val('');
+                $("#cancel_btn").hide();
+                $("#delete_btn").hide();
             }
         }
 
@@ -111,9 +147,36 @@
             const userList = new UserList();
             await userList.getAndDraw();
 
-            $(document).on('click', '#submit_btn', () => {
+            $(document).on('click', '#save_btn', () => {
                 userList.save();
             });
+
+            $(document).on('click', '.table tbody tr td', (e) => {
+                $tr = $(e.target).parent('tr');
+                let ids = $tr.find('.ids').text();
+                let firstName = $tr.find('.firstName').text();
+                let lastName = $tr.find('.lastName').text();
+
+                $("[name='ids']").val(ids);
+                $("[name='firstName']").val(firstName);
+                $("[name='lastName']").val(lastName);
+                $("#cancel_btn").show();
+                $("#delete_btn").show();
+            });
+
+            $(document).on('click', '#cancel_btn', (e) => {
+                $("#users_form").find('input').val('');
+                $("#cancel_btn").hide();
+                $("#delete_btn").hide();
+            });
+
+            $(document).on('click', '#delete_btn', (e) => {
+                userList.delete();
+            });
+
+
+            // TODO cancel_btn
+            // TODO delete
         })()
     </script>
 </body>
